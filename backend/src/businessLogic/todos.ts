@@ -6,6 +6,7 @@ import { CreateTodoRequest } from "../requests/CreateTodoRequest";
 import * as uuid from 'uuid';
 import { UpdateTodoRequest } from "../requests/UpdateTodoRequest";
 
+const s3Bucket = process.env.S3_BUCKET;
 const todoAccess = new TodoAccess();
 
 export async function getTodos(event: APIGatewayProxyEvent): Promise<TodoItem[]> {
@@ -20,6 +21,7 @@ export async function createTodo(newTodo: CreateTodoRequest, event: APIGatewayPr
         userId: getUserId(event),
         createdAt: new Date().toISOString(),
         done: false,
+        attachmentUrl: `https://${s3Bucket}.s3.amazonaws.com/${itemId}`,
         ...newTodo
     };
     return await todoAccess.createTodo(newItem);
