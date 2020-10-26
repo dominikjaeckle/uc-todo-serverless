@@ -16,6 +16,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   // TODO: Update a TODO item with the provided id using values in the "updatedTodo" object
   try {
     await updateTodo(todoId, updatedTodo, event);
+    logger.info('Successfully udpated todo item.');
     return {
       statusCode: 200,
       headers: {
@@ -26,6 +27,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     }
   }
   catch (e) {
+    logger.error('Unable to updated todo, item to be updated could not be found.');
     return {
       statusCode: 404,
       headers: {

@@ -11,6 +11,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   const todoId = event.pathParameters.todoId
   try {
     await deleteTodo(todoId, event);
+    logger.info('Successfully deleted todo item with id:', todoId);
     return {
       statusCode: 200,
       headers: {
@@ -21,6 +22,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     }
   }
   catch (e) {
+    logger.error('Could not find item to be deleted with id:', todoId);
     return {
       statusCode: 404,
       headers: {

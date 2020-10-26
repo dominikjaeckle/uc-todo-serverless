@@ -2,6 +2,12 @@ import { DocumentClient } from "aws-sdk/clients/dynamodb";
 import { TodoItem } from "../models/TodoItem";
 import { UpdateTodoRequest } from "../requests/UpdateTodoRequest";
 import * as AWS from 'aws-sdk'
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('createTodo')
+
+const AWSXRay = require('aws-xray-sdk');
+const XAWS = AWSXRay.captureAWS(AWS);
 
 const todosTable = process.env.TODOS_TABLE;
 const todosTableIndex = process.env.TODO_INDEX;
@@ -11,10 +17,12 @@ export class TodoAccess {
     private docClient: DocumentClient;
 
     constructor() {
-        this.docClient = new AWS.DynamoDB.DocumentClient();
+        // this.docClient = new AWS.DynamoDB.DocumentClient();
+        this.docClient = new XAWS.DynamoDB.DocumentClient();
     }
 
     async getTodosForUser(userId: string): Promise<TodoItem[]> {
+        logger.info('dataLayer: Start retrieving all todos for user:', userId);
         // get all TODOs of the loged in user
         const result = await this.docClient.query({
             TableName: todosTable,
@@ -25,10 +33,12 @@ export class TodoAccess {
         }).promise();
 
         const items = result.Items
+        logger.info('dataLayer: User', userId, 'has', items.length, 'items');
         return items as TodoItem[];
     }
 
     async createTodo(newTodo: TodoItem): Promise<TodoItem> {
+        logger.info('dataLayer: Create a new todo:', newTodo);
         await this.docClient.put({
             TableName: todosTable,
             Item: newTodo
@@ -37,6 +47,7 @@ export class TodoAccess {
     }
 
     async getTodoforUserAndTodoId(todoId: string, userId: string): Promise<TodoItem> {
+        logger.info('dataLayer: Get todo by id', todoId, 'for user:', userId);
         const todo = await this.docClient.query({
             TableName: todosTable,
             IndexName: todosTableIndex,
@@ -51,6 +62,7 @@ export class TodoAccess {
 
         const item = todo.Items[0]
         if (item === undefined) {
+            logger.error('dataLayer: Todo with id', todoId, 'does not exist for user', userId);
             throw new Error();
         }
 
@@ -58,6 +70,7 @@ export class TodoAccess {
     }
 
     async deleteTodo(todoId: string, userId: string): Promise<void> {
+        logger.info('dataLayer: Delete todo', todoId, 'for user:', userId);
         // first get todo from database
         const item: TodoItem = await this.getTodoforUserAndTodoId(todoId, userId);
         
@@ -77,6 +90,7 @@ export class TodoAccess {
     }
 
     async updateTodo(todoId: string, userId: string, updatedTodo: UpdateTodoRequest): Promise<void> {
+        logger.info('dataLayer: Update existing todo with id', todoId, 'for user', userId);
         // first get todo from database
         const item: TodoItem = await this.getTodoforUserAndTodoId(todoId, userId);
 
